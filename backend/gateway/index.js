@@ -42,6 +42,7 @@ app.use(
   protect,
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
+      // req.originalUrl pass karega taaki /api/me exact match ho
       return req.originalUrl;
     },
   }),
