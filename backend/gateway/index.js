@@ -14,10 +14,10 @@ dotenv.config();
 const PORT = process.env.PORT || 8000;
 const app = express();
 
-// CORS setup
+// CORS setup for Production IP
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://32.236.225.26",
     credentials: true,
   }),
 );
@@ -32,7 +32,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   "/api/auth",
   proxy("http://127.0.0.1:8001", {
-    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyReqPathResolver: (req) => {
+      // Ensures the full path is correctly forwarded
+      return req.originalUrl;
+    },
   }),
 );
 
@@ -41,7 +44,9 @@ app.use(
   "/api/me",
   protect,
   proxy("http://127.0.0.1:8001", {
-    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyReqPathResolver: (req) => {
+      return req.originalUrl;
+    },
   }),
 );
 
