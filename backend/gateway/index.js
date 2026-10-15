@@ -6,22 +6,18 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import { proxyWithHeader } from "./utils/proxyWithHeader.js";
-
 import { protect } from "./middleware/auth.middleware.js";
-import { getCurrentUser } from "./controller/user.controller.js";
+
 // Load Environment Variables
 dotenv.config();
 
-console.log("CHECK AUTH SERVICE URL:", process.env.AUTH_SERVICE);
-
 const PORT = process.env.PORT || 8000;
-
 const app = express();
 
-// cors
+// CORS setup
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   }),
 );
@@ -29,31 +25,36 @@ app.use(
 app.use(morgan("dev"));
 app.use(cookieParser());
 
-// Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// forword proxy setup
+// Forward Proxy Setup for Auth Service (Port 8001)
 app.use(
   "/api/auth",
-  proxy(process.env.AUTH_SERVICE, {
-    proxyReqPathResolver: (req) => {
-      return req.url;
-    },
+  proxy("http://127.0.0.1:8001", {
+    proxyReqPathResolver: (req) => req.originalUrl,
   }),
 );
-app.use("/api/chat", protect, proxyWithHeader(process.env.CHAT_SERVICE));
 
+// Proxy for /api/me -> Auth Service (Port 8001)
+app.use(
+  "/api/me",
+  protect,
+  proxy("http://127.0.0.1:8001", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  }),
+);
+
+// Proxy for Chat Service (Port 8002)
+app.use("/api/chat", protect, proxyWithHeader("http://127.0.0.1:8002"));
+
+// Proxy for AI Agent Service (Port 8003)
 app.use(
   "/api/agent",
   protect,
-  proxyWithHeader(process.env.AGENT_SERVICE, { raw: true }),
+  proxyWithHeader("http://127.0.0.1:8003", { raw: true }),
 );
 
-//get user
-app.get("/api/me", protect, getCurrentUser);
-
-// Check Route
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -61,7 +62,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// Start Server
 app.listen(PORT, () => {
-  console.log(` Gateway Server running on port: ${PORT}`);
+  console.log(`Gateway Server running on port: ${PORT}`);
 });

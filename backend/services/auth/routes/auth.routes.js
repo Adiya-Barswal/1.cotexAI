@@ -1,12 +1,20 @@
 import express from "express";
-import { login, logout } from "../controllers/auth.controller.js";
+import {
+  login,
+  logout,
+  getCurrentUser,
+} from "../controllers/auth.controller.js";
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// login route
+// Login route
 router.post("/login", login);
 
-//logout
+// Logout route
 router.get("/logout", logout);
+
+// Get current user route
+router.get("/me", protect, getCurrentUser);
 
 export default router;
