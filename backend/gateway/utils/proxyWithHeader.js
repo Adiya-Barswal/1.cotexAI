@@ -1,4 +1,3 @@
-```js
 import proxy from "express-http-proxy";
 
 export const proxyWithHeader = (
@@ -9,18 +8,13 @@ export const proxyWithHeader = (
     parseReqBody: !raw,
 
     proxyReqPathResolver: (req) => {
-      return keepFullPath
-        ? req.originalUrl
-        : req.url;
+      return keepFullPath ? req.originalUrl : req.url;
     },
 
     proxyReqBodyDecorator: raw
       ? undefined
       : (bodyContent, srcReq) => {
-          if (
-            srcReq.body &&
-            Object.keys(srcReq.body).length > 0
-          ) {
+          if (srcReq.body && Object.keys(srcReq.body).length > 0) {
             return JSON.stringify(srcReq.body);
           }
 
@@ -28,11 +22,9 @@ export const proxyWithHeader = (
         },
 
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      const contentType =
-        srcReq.headers["content-type"] || "";
+      const contentType = srcReq.headers["content-type"] || "";
 
-      const isMultipart =
-        contentType.includes("multipart/form-data");
+      const isMultipart = contentType.includes("multipart/form-data");
 
       if (
         !raw &&
@@ -40,8 +32,7 @@ export const proxyWithHeader = (
         srcReq.body &&
         Object.keys(srcReq.body).length > 0
       ) {
-        proxyReqOpts.headers["Content-Type"] =
-          "application/json";
+        proxyReqOpts.headers["Content-Type"] = "application/json";
       }
 
       const userId =
@@ -51,12 +42,10 @@ export const proxyWithHeader = (
         srcReq.user?.uid;
 
       if (userId) {
-        proxyReqOpts.headers["x-user-id"] =
-          String(userId);
+        proxyReqOpts.headers["x-user-id"] = String(userId);
       }
 
       return proxyReqOpts;
     },
   });
 };
-```;

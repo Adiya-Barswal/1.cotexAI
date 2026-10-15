@@ -3,22 +3,22 @@ import { app } from "../config/firebase.js";
 import { User } from "../models/user.model.js";
 import crypto from "crypto";
 import { redis } from "../../../shared/redis/redis.js";
-import { json } from "stream/consumers";
 
 export const login = async (req, res) => {
   try {
     const { token } = req.body;
 
     if (!token) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Token is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Token is required",
+      });
     }
 
-    // 1. Firebase Token Verify
+    // 1. Verify Firebase token
     const decoded = await getAuth(app).verifyIdToken(token);
 
-    // 2. Find or Create User
+    // 2. Find or create user
     let user = await User.findOne({ firebaseUid: decoded.uid });
 
     if (!user) {
@@ -30,10 +30,10 @@ export const login = async (req, res) => {
       });
     }
 
-    // 3. genarate Unique Session ID from crypto
+    // 3. Generate unique session ID
     const sessionId = crypto.randomUUID();
 
-    // set session id for 7 days in redis
+    // Store session in Redis for 7 days
     await redis.set(
       `session:${sessionId}`,
       JSON.stringify({
@@ -46,7 +46,7 @@ export const login = async (req, res) => {
       7 * 24 * 60 * 60,
     );
 
-    // 4. 7-Day Session Cookie Set
+    // 4. Set session cookie for 7 days
     res.cookie("session", sessionId, {
       httpOnly: true,
       secure: false,
@@ -54,27 +54,31 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // 5. User Response
+    // 5. Return user
     return res.status(200).json({
       success: true,
       user,
     });
   } catch (error) {
-    return res.status(500).json({ message: `login error ${error}` });
+    console.error("Login error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Login failed",
+    });
   }
 };
 
 // Logout
-
 export const logout = async (req, res) => {
   try {
-    const sessionId = req.cookies.sessionId;
+    // Cookie name matches the one set during login
+    const sessionId = req.cookies?.session;
 
     if (sessionId) {
       await redis.del(`session:${sessionId}`);
     }
 
-    //  Client browser se session cookie clear karna
     res.clearCookie("session", {
       httpOnly: true,
       secure: false,
@@ -86,6 +90,11 @@ export const logout = async (req, res) => {
       message: "Logged out successfully",
     });
   } catch (error) {
-    return res.status(500).json({ message: `login error ${error}` });
+    console.error("Logout error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Logout failed",
+    });
   }
 };
