@@ -12,7 +12,6 @@ dotenv.config();
 
 const PORT = process.env.PORT || 8000;
 
-// Docker mein ye URLs service names ke through set karna.
 const AUTH_SERVICE_URL =
   process.env.AUTH_SERVICE_URL || "http://127.0.0.1:8001";
 
@@ -40,7 +39,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   "/api/auth",
   proxy(AUTH_SERVICE_URL, {
-    proxyReqPathResolver: (req) => req.url,
+    proxyReqPathResolver: (req) => {
+      const path = req.url.split("?")[0];
+      const query = req.url.includes("?")
+        ? `?${req.url.split("?").slice(1).join("?")}`
+        : "";
+      return `${path.startsWith("/") ? path : `/${path}`}${query}`;
+    },
   }),
 );
 
