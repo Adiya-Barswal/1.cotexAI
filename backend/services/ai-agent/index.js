@@ -10,23 +10,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8003;
 
-// Middleware
-
 app.use(express.json());
 app.use(morgan("dev"));
 
-// agent router middleware
-app.use("/api/agent", router);
+// Gateway /api/agent prefix strip karta hai.
+app.use("/", router);
 
-// Test Route for Chat Service
-app.get("/", (req, res) => {
+app.get("/test", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Hello from Ai agent",
+    message: "AI Agent Service is running!",
   });
 });
 
 app.listen(PORT, () => {
-  console.log(` Agent Service running on port: ${PORT}`);
+  console.log(`AI Agent Service running on port: ${PORT}`);
   connectDB();
 });

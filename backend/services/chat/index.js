@@ -10,29 +10,28 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8002;
 
-// Middleware
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://32.236.225.26",
     credentials: true,
   }),
 );
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-// chat middleware
+// Gateway prefix strip karta hai, isliye routes root par mount hain.
+app.use("/", chatRoutes);
 
-app.use("/api/chat", chatRoutes);
-
-// Test Route for Chat Service
 app.get("/test", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Chat Service is running successfully on port 8002!",
+    message: "Chat Service is running successfully!",
   });
 });
 
 app.listen(PORT, () => {
-  console.log(` Chat Service running on port: ${PORT}`);
+  console.log(`Chat Service running on port: ${PORT}`);
   connectDB();
 });

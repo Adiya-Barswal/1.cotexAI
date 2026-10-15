@@ -4,3 +4,4 @@ services:
     container_name: cotexai_redis
     ports:
       - "6379:6379"
+    restart: unless-stopped

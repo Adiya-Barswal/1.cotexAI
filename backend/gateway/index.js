@@ -11,6 +11,17 @@ import { protect } from "./middleware/auth.middleware.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 8000;
+
+// Docker mein ye URLs service names ke through set karna.
+const AUTH_SERVICE_URL =
+  process.env.AUTH_SERVICE_URL || "http://127.0.0.1:8001";
+
+const CHAT_SERVICE_URL =
+  process.env.CHAT_SERVICE_URL || "http://127.0.0.1:8002";
+
+const AGENT_SERVICE_URL =
+  process.env.AGENT_SERVICE_URL || "http://127.0.0.1:8003";
+
 const app = express();
 
 app.use(
@@ -25,46 +36,49 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 1. Auth Service Proxy: /api/auth/login -> /login on port 8001
+// Auth: /api/auth/login -> /login
 app.use(
   "/api/auth",
-  proxy("http://127.0.0.1:8001", {
-    proxyReqPathResolver: (req) => {
-      // req.url yahan /login hoga, jo auth service ko mil jayega
-      return req.url;
-    },
+  proxy(AUTH_SERVICE_URL, {
+    proxyReqPathResolver: (req) => req.url,
   }),
 );
 
-// 2. Me Route Proxy: /api/me -> /me on port 8001
+// Current user: /api/me -> /me
 app.use(
   "/api/me",
   protect,
-  proxy("http://127.0.0.1:8001", {
-    proxyReqPathResolver: (req) => {
-      return "/me";
-    },
+  proxy(AUTH_SERVICE_URL, {
+    proxyReqPathResolver: () => "/me",
   }),
 );
 
-// 3. Chat Service Proxy: /api/chat/get-conversations -> /get-conversations on port 8002
+// Chat: /api/chat/get-conversations -> /get-conversations
 app.use(
   "/api/chat",
   protect,
-  proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: false }),
+  proxyWithHeader(CHAT_SERVICE_URL, {
+    keepFullPath: false,
+  }),
 );
 
-// 4. AI Agent Service Proxy: /api/agent -> / on port 8003
+// AI Agent: /api/agent/chat -> /chat
 app.use(
   "/api/agent",
   protect,
-  proxyWithHeader("http://127.0.0.1:8003", { raw: true, keepFullPath: false }),
+  proxyWithHeader(AGENT_SERVICE_URL, {
+    raw: true,
+    keepFullPath: false,
+  }),
 );
 
 app.get("/", (req, res) => {
-  res.status(200).json({ success: true, message: "Hello from Gateway!" });
+  res.status(200).json({
+    success: true,
+    message: "Hello from Gateway!",
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`Gateway Server running on port: ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Gateway running on port ${PORT}`);
 });
