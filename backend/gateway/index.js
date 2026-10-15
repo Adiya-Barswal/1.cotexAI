@@ -50,14 +50,18 @@ app.use(
   }),
 );
 
-// 3. Chat Service Proxy (Port 8002)
-app.use("/api/chat", protect, proxyWithHeader("http://127.0.0.1:8002"));
+// Chat Service Proxy (keepFullPath: true rakhein taaki poora path jaye agar chat service waisa expect karti hai)
+app.use(
+  "/api/chat",
+  protect,
+  proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: true }),
+);
 
-// 4. AI Agent Service Proxy (Port 8003)
+// AI Agent Service Proxy
 app.use(
   "/api/agent",
   protect,
-  proxyWithHeader("http://127.0.0.1:8003", { raw: true }),
+  proxyWithHeader("http://127.0.0.1:8003", { raw: true, keepFullPath: true }),
 );
 
 app.get("/", (req, res) => {
