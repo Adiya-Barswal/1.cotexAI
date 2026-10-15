@@ -25,12 +25,11 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 1. Auth Service Proxy: /api/auth/login -> /login on port 8001
+// 1. Auth Service Proxy: /api/auth -> port 8001
 app.use(
   "/api/auth",
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      // req.url me /login bachti hai, so it forwards to http://127.0.0.1:8001/login
       return req.url;
     },
   }),
@@ -42,20 +41,19 @@ app.use(
   protect,
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      // Forwards directly to http://127.0.0.1:8001/me
       return "/me";
     },
   }),
 );
 
-// 3. Chat Service Proxy: /api/chat
+// 3. Chat Service Proxy: /api/chat -> port 8002
 app.use(
   "/api/chat",
   protect,
   proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: false }),
 );
 
-// 4. AI Agent Service Proxy: /api/agent
+// 4. AI Agent Service Proxy: /api/agent -> port 8003
 app.use(
   "/api/agent",
   protect,
