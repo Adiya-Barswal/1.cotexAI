@@ -30,18 +30,18 @@ app.use(
   "/api/auth",
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      return req.url;
+      return req.originalUrl;
     },
   }),
 );
 
-// 2. Me Route Proxy: /api/me -> /me on port 8001
+// 2. Me Route Proxy: /api/me -> port 8001
 app.use(
   "/api/me",
   protect,
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      return "/me";
+      return req.originalUrl;
     },
   }),
 );
@@ -50,14 +50,22 @@ app.use(
 app.use(
   "/api/chat",
   protect,
-  proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: false }),
+  proxy("http://127.0.0.1:8002", {
+    proxyReqPathResolver: (req) => {
+      return req.originalUrl;
+    },
+  }),
 );
 
 // 4. AI Agent Service Proxy: /api/agent -> port 8003
 app.use(
   "/api/agent",
   protect,
-  proxyWithHeader("http://127.0.0.1:8003", { raw: true, keepFullPath: false }),
+  proxy("http://127.0.0.1:8003", {
+    proxyReqPathResolver: (req) => {
+      return req.originalUrl;
+    },
+  }),
 );
 
 app.get("/", (req, res) => {
