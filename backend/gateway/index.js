@@ -1,7 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
-import proxy from "express-http-proxy";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -25,49 +24,31 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 1. Auth Service Proxy: /api/auth/login -> /login on port 8001
+// 1. Auth Service Proxy: /api/auth -> port 8001 (keepFullPath: false taaki /api/auth/login -> /login ban jaye)
 app.use(
   "/api/auth",
-  proxy("http://127.0.0.1:8001", {
-    proxyReqPathResolver: (req) => {
-      // Yeh /api/auth ko hata kar sirf /login bhejega port 8001 par
-      return req.url;
-    },
-  }),
+  proxyWithHeader("http://127.0.0.1:8001", { keepFullPath: false }),
 );
 
 // 2. Me Route Proxy: /api/me -> port 8001
 app.use(
   "/api/me",
   protect,
-  proxy("http://127.0.0.1:8001", {
-    proxyReqPathResolver: (req) => {
-      // req.originalUrl pass karega taaki /api/me exact match ho
-      return req.originalUrl;
-    },
-  }),
+  proxyWithHeader("http://127.0.0.1:8001", { keepFullPath: true }),
 );
 
 // 3. Chat Service Proxy: /api/chat -> port 8002
 app.use(
   "/api/chat",
   protect,
-  proxy("http://127.0.0.1:8002", {
-    proxyReqPathResolver: (req) => {
-      return req.originalUrl;
-    },
-  }),
+  proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: true }),
 );
 
 // 4. AI Agent Service Proxy: /api/agent -> port 8003
 app.use(
   "/api/agent",
   protect,
-  proxy("http://127.0.0.1:8003", {
-    proxyReqPathResolver: (req) => {
-      return req.originalUrl;
-    },
-  }),
+  proxyWithHeader("http://127.0.0.1:8003", { raw: true, keepFullPath: true }),
 );
 
 app.get("/", (req, res) => {
