@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import crypto from "crypto";
 import { redis } from "../../../shared/redis/redis.js";
 
+// Login
 export const login = async (req, res) => {
   try {
     const { token } = req.body;
@@ -15,11 +16,11 @@ export const login = async (req, res) => {
       });
     }
 
-    // 1. Verify Firebase token
     const decoded = await getAuth(app).verifyIdToken(token);
 
-    // 2. Find or create user
-    let user = await User.findOne({ firebaseUid: decoded.uid });
+    let user = await User.findOne({
+      firebaseUid: decoded.uid,
+    });
 
     if (!user) {
       user = await User.create({
@@ -30,10 +31,8 @@ export const login = async (req, res) => {
       });
     }
 
-    // 3. Generate unique session ID
     const sessionId = crypto.randomUUID();
 
-    // Store session in Redis for 7 days
     await redis.set(
       `session:${sessionId}`,
       JSON.stringify({
@@ -46,7 +45,6 @@ export const login = async (req, res) => {
       7 * 24 * 60 * 60,
     );
 
-    // 4. Set session cookie for 7 days
     res.cookie("session", sessionId, {
       httpOnly: true,
       secure: false,
@@ -54,7 +52,6 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // 5. Return user
     return res.status(200).json({
       success: true,
       user,
@@ -72,7 +69,6 @@ export const login = async (req, res) => {
 // Logout
 export const logout = async (req, res) => {
   try {
-    // Cookie name matches the one set during login
     const sessionId = req.cookies?.session;
 
     if (sessionId) {
@@ -95,6 +91,51 @@ export const logout = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Logout failed",
+    });
+  }
+};
+
+// Get current logged-in user
+export const getCurrentUser = async (req, res) => {
+  try {
+    const sessionId = req.cookies?.session;
+
+    if (!sessionId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const sessionData = await redis.get(`session:${sessionId}`);
+
+    if (!sessionData) {
+      return res.status(401).json({
+        success: false,
+        message: "Session expired",
+      });
+    }
+
+    const session = JSON.parse(sessionData);
+    const user = await User.findById(session.userId).select("-__v");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("Get current user error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get current user",
     });
   }
 };
