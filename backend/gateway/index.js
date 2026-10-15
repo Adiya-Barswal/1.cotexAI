@@ -25,12 +25,13 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 1. Auth Service Proxy: /api/auth -> port 8001
+// 1. Auth Service Proxy: /api/auth/login -> /login on port 8001
 app.use(
   "/api/auth",
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      return req.originalUrl;
+      // Yeh /api/auth ko hata kar sirf /login bhejega port 8001 par
+      return req.url;
     },
   }),
 );
