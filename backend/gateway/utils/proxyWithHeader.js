@@ -17,13 +17,11 @@ export const proxyWithHeader = (
           if (srcReq.body && Object.keys(srcReq.body).length > 0) {
             return JSON.stringify(srcReq.body);
           }
-
           return bodyContent;
         },
 
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
       const contentType = srcReq.headers["content-type"] || "";
-
       const isMultipart = contentType.includes("multipart/form-data");
 
       if (
