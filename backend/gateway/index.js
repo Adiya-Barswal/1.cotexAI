@@ -33,8 +33,8 @@ app.use(
   "/api/auth",
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      // Ensures the full path is correctly forwarded
-      return req.originalUrl;
+      // Strips /api/auth prefix and forwards the rest (e.g., /login)
+      return req.url;
     },
   }),
 );
@@ -45,7 +45,8 @@ app.use(
   protect,
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      return req.originalUrl;
+      // Directly forwards to /me on the auth service
+      return "/me";
     },
   }),
 );
