@@ -1,38 +1,49 @@
 import dotenv from "dotenv";
-dotenv.config();
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({
+  path: path.resolve(__dirname, "../.env"),
+});
+
 import { ChatGroq } from "@langchain/groq";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-//import { ChatOpenRouter } from "@langchain/openrouter";
 
-// groq ai model
+if (!process.env.GROQ_API_KEY) {
+  throw new Error("GROQ_API_KEY missing from ai-agent/.env");
+}
+
+if (!process.env.GOOGLE_API_KEY) {
+  throw new Error("GOOGLE_API_KEY missing from ai-agent/.env");
+}
+
 const groq = new ChatGroq({
+  apiKey: process.env.GROQ_API_KEY,
   model: "openai/gpt-oss-120b",
   maxTokens: 8000,
 });
 
-// gemini ai model
 const gemini = new ChatGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_API_KEY,
   model: "gemini-2.5-flash",
   maxOutputTokens: 8000,
 });
 
-// call getmodels for using agent
 export const getModel = async (agent) => {
   switch (agent) {
     case "chat":
-      return groq;
     case "search":
-      return groq;
-    case "router":
-      return gemini;
-    case "intent":
-      return gemini;
     case "coding":
-      return groq;
-    case "imageAnalyzer":
-      return gemini;
     case "pdf":
       return groq;
+
+    case "router":
+    case "intent":
+    case "imageAnalyzer":
+      return gemini;
 
     default:
       return groq;
