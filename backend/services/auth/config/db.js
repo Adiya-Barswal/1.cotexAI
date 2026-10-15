@@ -6,13 +6,13 @@ import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
-const connectDB = async () => {
+const connectDb = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("db connected ");
+    console.log("db connected");
   } catch (error) {
-    console.error(`db error: ${error.message}`);
+    console.log(`db error ${error}`);
   }
 };
 
-export default connectDB;
+export default connectDb;

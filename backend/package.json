@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+    "dotenv": "^18.0.8",
     "ioredis": "^6.0.0"
   }
 }

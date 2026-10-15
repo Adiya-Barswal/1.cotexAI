@@ -1,30 +1,20 @@
+dotenv.config();
 import express from "express";
 import dotenv from "dotenv";
-import morgan from "morgan";
+import connectDb from "./config/db.js";
+import router from "./routes/auth.route.js";
+// dotenv.config();
 
-import authRoutes from "./routes/auth.routes.js";
-import "../../shared/redis/redis.js";
-import connectDB from "./config/db.js";
-
-dotenv.config();
+const port = process.env.PORT;
 
 const app = express();
-const PORT = process.env.PORT || 8001;
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan("dev"));
-
+app.use("/", router);
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Hello from auth!",
-  });
+  res.json({ message: "hello from auth" });
 });
 
-app.use("/", authRoutes);
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Auth Service running on port: ${PORT}`);
-  connectDB();
+app.listen(port, () => {
+  console.log(`auth started at ${port}`);
+  connectDb();
 });

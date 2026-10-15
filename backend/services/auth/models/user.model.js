@@ -4,30 +4,29 @@ const userSchema = new mongoose.Schema(
   {
     firebaseUid: {
       type: String,
-      required: true,
       unique: true,
     },
-    email: {
+    name: String,
+    email: String,
+    avatar: String,
+    plan: {
       type: String,
-      required: true,
-      unique: true,
+      default: "free",
     },
-    name: {
-      type: String,
+    credits: {
+      type: Number,
+      default: 100,
     },
-
-    avatar: {
-      type: String,
-      default: "https://api.dicebear.com/7.x/bottts/svg?seed=default", // Default avatar URL
+    totalCredits: {
+      type: Number,
+      default: 100,
     },
-
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
+    planExpiresAt: Date,
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
-export const User = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+export default User;

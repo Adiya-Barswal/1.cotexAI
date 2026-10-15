@@ -1,60 +1,38 @@
 import express from "express";
 import dotenv from "dotenv";
-import morgan from "morgan";
+import proxy from "express-http-proxy";
+dotenv.config();
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
+import { getCurrentUser } from "./controllers/user.controller.js";
+import protect from "./middleware/auth.middleware.js";
 import { proxyWithHeader } from "./utils/proxyWithHeader.js";
-import { protect } from "./middleware/auth.middleware.js";
+import morgan from "morgan";
 
-dotenv.config();
+const port = process.env.PORT || 8000;
 
-const PORT = process.env.PORT || 8000;
 const app = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://32.236.225.26",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   }),
 );
 
 app.use(morgan("dev"));
 app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// 1. Auth Service Proxy: /api/auth -> port 8001 (keepFullPath: false taaki /api/auth/login -> /login ban jaye)
-app.use(
-  "/api/auth",
-  proxyWithHeader("http://127.0.0.1:8001", { keepFullPath: false }),
-);
+app.use("/api/auth", proxy(process.env.AUTH_SERVICE));
+app.use("/api/chat", protect, proxyWithHeader(process.env.CHAT_SERVICE));
+app.use("/api/agent", protect, proxyWithHeader(process.env.AGENT_SERVICE));
 
-// 2. Me Route Proxy: /api/me -> port 8001
-app.use(
-  "/api/me",
-  protect,
-  proxyWithHeader("http://127.0.0.1:8001", { keepFullPath: true }),
-);
-
-// 3. Chat Service Proxy: /api/chat -> port 8002
-app.use(
-  "/api/chat",
-  protect,
-  proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: true }),
-);
-
-// 4. AI Agent Service Proxy: /api/agent -> port 8003
-app.use(
-  "/api/agent",
-  protect,
-  proxyWithHeader("http://127.0.0.1:8003", { raw: true, keepFullPath: true }),
-);
+app.get("/api/me", protect, getCurrentUser);
 
 app.get("/", (req, res) => {
-  res.status(200).json({ success: true, message: "Hello from Gateway!" });
+  res.json({ message: "hello from gateway v5" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Gateway Server running on port: ${PORT}`);
+app.listen(port, () => {
+  console.log(`gateway started at ${port}`);
 });
