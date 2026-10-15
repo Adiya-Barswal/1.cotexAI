@@ -8,13 +8,11 @@ import cookieParser from "cookie-parser";
 import { proxyWithHeader } from "./utils/proxyWithHeader.js";
 import { protect } from "./middleware/auth.middleware.js";
 
-// Load Environment Variables
 dotenv.config();
 
 const PORT = process.env.PORT || 8000;
 const app = express();
 
-// CORS setup for Production IP
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://32.236.225.26",
@@ -24,22 +22,21 @@ app.use(
 
 app.use(morgan("dev"));
 app.use(cookieParser());
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 1. Auth Service Proxy: Strips /api/auth so /api/auth/login becomes /login on port 8001
+// 1. Auth Service Proxy: /api/auth/login -> /login on port 8001
 app.use(
   "/api/auth",
   proxy("http://127.0.0.1:8001", {
     proxyReqPathResolver: (req) => {
-      // req.url contains everything after /api/auth (e.g., /login, /register)
+      // req.url yahan /login hoga, jo auth service ko mil jayega
       return req.url;
     },
   }),
 );
 
-// 2. Me Route Proxy: Rewrites /api/me to /me on auth service (port 8001)
+// 2. Me Route Proxy: /api/me -> /me on port 8001
 app.use(
   "/api/me",
   protect,
@@ -50,25 +47,22 @@ app.use(
   }),
 );
 
-// Chat Service Proxy (keepFullPath: true rakhein taaki poora path jaye agar chat service waisa expect karti hai)
+// 3. Chat Service Proxy: /api/chat/get-conversations -> /get-conversations on port 8002
 app.use(
   "/api/chat",
   protect,
-  proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: true }),
+  proxyWithHeader("http://127.0.0.1:8002", { keepFullPath: false }),
 );
 
-// AI Agent Service Proxy
+// 4. AI Agent Service Proxy: /api/agent -> / on port 8003
 app.use(
   "/api/agent",
   protect,
-  proxyWithHeader("http://127.0.0.1:8003", { raw: true, keepFullPath: true }),
+  proxyWithHeader("http://127.0.0.1:8003", { raw: true, keepFullPath: false }),
 );
 
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Hello from Gateway!",
-  });
+  res.status(200).json({ success: true, message: "Hello from Gateway!" });
 });
 
 app.listen(PORT, () => {
