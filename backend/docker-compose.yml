@@ -46,7 +46,7 @@ services:
       - "5003:5003"
     environment:
       - PORT=5003
-      command: npm start
+    command: npm start
     restart: unless-stopped
 
   frontend:
