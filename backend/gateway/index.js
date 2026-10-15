@@ -28,30 +28,34 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- AUTH ROUTES (Supports both /api/auth and /auth) ---
-const authProxy = proxy("http://127.0.0.1:8001", {
-  proxyReqPathResolver: (req) => req.url,
-});
-
-app.use(["/api/auth", "/auth"], authProxy);
-
-// --- ME ROUTES (Supports both /api/me and /me) ---
-const meProxy = proxy("http://127.0.0.1:8001", {
-  proxyReqPathResolver: (req) => "/me",
-});
-
-app.use(["/api/me", "/me"], protect, meProxy);
-
-// --- CHAT ROUTES (Supports both /api/chat and /chat) ---
+// 1. Auth Service Proxy: Strips /api/auth so /api/auth/login becomes /login on port 8001
 app.use(
-  ["/api/chat", "/chat"],
-  protect,
-  proxyWithHeader("http://127.0.0.1:8002"),
+  "/api/auth",
+  proxy("http://127.0.0.1:8001", {
+    proxyReqPathResolver: (req) => {
+      // req.url contains everything after /api/auth (e.g., /login, /register)
+      return req.url;
+    },
+  }),
 );
 
-// --- AI AGENT ROUTES (Supports both /api/agent and /agent) ---
+// 2. Me Route Proxy: Rewrites /api/me to /me on auth service (port 8001)
 app.use(
-  ["/api/agent", "/agent"],
+  "/api/me",
+  protect,
+  proxy("http://127.0.0.1:8001", {
+    proxyReqPathResolver: (req) => {
+      return "/me";
+    },
+  }),
+);
+
+// 3. Chat Service Proxy (Port 8002)
+app.use("/api/chat", protect, proxyWithHeader("http://127.0.0.1:8002"));
+
+// 4. AI Agent Service Proxy (Port 8003)
+app.use(
+  "/api/agent",
   protect,
   proxyWithHeader("http://127.0.0.1:8003", { raw: true }),
 );
